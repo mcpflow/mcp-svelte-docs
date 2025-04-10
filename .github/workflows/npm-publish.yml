@@ -68,7 +68,7 @@ jobs:
           PACKAGE_JSON=$(cat package.json)
           
           # 修改package.json内容 - 使用单行命令避免YAML语法错误
-          MODIFIED_JSON=$(echo "$PACKAGE_JSON" | jq --arg name "${{ steps.mcp_info.outputs.package_name }}" --arg version "${{ steps.mcp_info.outputs.version }}" --arg desc "$(node -p "require('./package.json').description || ''")" --arg originalName "${{ steps.mcp_info.outputs.original_name }}" --arg repoUrl "${{ github.server_url }}/${{ github.repository }}" --arg developer "${{ github.repository_owner }}" '.name = $name | .version = $version | .private = false | .mcpflow = {"originalName": $originalName, "developer": $developer, "gitRepo": $repoUrl, "callType": "MCP"} | .keywords = ((.keywords // []) + ["mcpflow", "mcp"] | unique) | .repository = {"type": "git", "url": $repoUrl + ".git"} | .homepage = $repoUrl')
+          MODIFIED_JSON=$(echo "$PACKAGE_JSON" | jq --arg name "${{ steps.mcp_info.outputs.package_name }}" --arg version "${{ steps.mcp_info.outputs.version }}" --arg desc "$(node -p "require('./package.json').description || ''")" --arg originalName "${{ steps.mcp_info.outputs.original_name }}" --arg repoUrl "${{ github.server_url }}/${{ github.repository }}" --arg repoUrlGit "${{ github.server_url }}/${{ github.repository }}.git" --arg developer "${{ github.repository_owner }}" '.name = $name | .version = $version | .private = false | .mcpflow = {"originalName": $originalName, "developer": $developer, "gitRepo": $repoUrl, "callType": "MCP"} | .keywords = ((.keywords // []) + ["mcpflow", "mcp"] | unique) | .repository = {"type": "git", "url": $repoUrlGit} | .homepage = $repoUrl')
           
           # 写回package.json
           echo "$MODIFIED_JSON" > package.json
