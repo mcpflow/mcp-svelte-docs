@@ -61,7 +61,7 @@ jobs:
           else
             echo "version=${ORIGINAL_VERSION}" >> $GITHUB_OUTPUT
           fi
-
+      
       - name: 修改 package.json
         run: |
           # 读取package.json
