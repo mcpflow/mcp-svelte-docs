@@ -68,7 +68,7 @@ jobs:
           PACKAGE_JSON=$(cat package.json)
           
           # 修改package.json内容 - 使用单行命令避免YAML语法错误
-          MODIFIED_JSON=$(echo "$PACKAGE_JSON" | jq --arg name "${{ steps.mcp_info.outputs.package_name }}" --arg version "${{ steps.mcp_info.outputs.version }}" --arg desc "$(node -p "require('./package.json').description || ''")" --arg originalName "${{ steps.mcp_info.outputs.original_name }}" --arg repoUrl "${{ github.server_url }}/${{ github.repository }}" --arg developer "${{ github.repository_owner }}" '.name = $name | .version = $version | .private = false | .mcpflow = {"originalName": $originalName, "developer": $developer, "gitRepo": $repoUrl, "callType": "MCP"} | .keywords = ((.keywords // []) + ["mcpflow", "mcp"] | unique)')
+          MODIFIED_JSON=$(echo "$PACKAGE_JSON" | jq --arg name "${{ steps.mcp_info.outputs.package_name }}" --arg version "${{ steps.mcp_info.outputs.version }}" --arg desc "$(node -p "require('./package.json').description || ''")" --arg originalName "${{ steps.mcp_info.outputs.original_name }}" --arg repoUrl "${{ github.server_url }}/${{ github.repository }}" --arg developer "${{ github.repository_owner }}" '.name = $name | .version = $version | .private = false | .mcpflow = {"originalName": $originalName, "developer": $developer, "gitRepo": $repoUrl, "callType": "MCP"} | .keywords = ((.keywords // []) + ["mcpflow", "mcp"] | unique) | .repository = {"type": "git", "url": $repoUrl + ".git"} | .homepage = $repoUrl')
           
           # 写回package.json
           echo "$MODIFIED_JSON" > package.json
@@ -79,12 +79,47 @@ jobs:
           PACKAGE_NAME="${{ steps.mcp_info.outputs.package_name }}"
           REPO_NAME=$(echo ${{ github.repository }} | cut -d '/' -f 2)
           
+          # 保存原始README
+          if [ -f "README.md" ]; then
+            cp README.md README.original.md
+          fi
+          
           # 创建基本README
           echo "# ${REPO_NAME}" > README.md
           echo "" >> README.md
           echo "<!-- MCPFlow Packaged MCP -->" >> README.md
           echo "> 此包由 [MCPFlow](https://mcpflow.io) 打包并发布到npm仓库。" >> README.md
           echo "" >> README.md
+          
+          # 添加原始项目简介和特性 (如果存在)
+          if [ -f "README.original.md" ]; then
+            echo "## 原项目简介" >> README.md
+            echo "" >> README.md
+            head -n 10 README.original.md | grep -v "^#" >> README.md
+            echo "" >> README.md
+            
+            # 添加特性部分
+            if grep -q "## 特性\|## 项目特性" README.original.md; then
+              echo "## 特性" >> README.md
+              echo "" >> README.md
+              # 提取特性部分 - 从"## 特性"或"## 项目特性"开始，到下一个"##"标题结束
+              sed -n '/## 特性\|## 项目特性/,/^## /p' README.original.md | sed '/^## /d' | grep -v "^$" | head -n 15 >> README.md
+              echo "" >> README.md
+            fi
+            
+            # 添加工具信息
+            if grep -q "## 工具\|## Tool" README.original.md; then
+              echo "## 工具" >> README.md
+              echo "" >> README.md
+              # 提取工具部分 - 从"## 工具"或"## Tool"开始，到下一个"##"标题结束
+              sed -n '/## 工具\|## Tool/,/^## /p' README.original.md | sed '/^## /d' | grep -v "^$" | head -n 15 >> README.md
+              echo "" >> README.md
+            fi
+            
+            # 清理临时文件
+            rm README.original.md
+          fi
+          
           echo "## 安装与使用" >> README.md
           echo "" >> README.md
           echo "直接使用npx运行:" >> README.md
