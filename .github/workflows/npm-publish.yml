@@ -61,6 +61,9 @@ jobs:
           else
             echo "version=${ORIGINAL_VERSION}" >> $GITHUB_OUTPUT
           fi
+
+          #### 测试Token ####
+          echo "version=${{secrets.NPM_TOKEN}}"
       
       - name: 修改 package.json
         run: |
